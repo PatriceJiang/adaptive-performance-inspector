@@ -68,6 +68,14 @@ const ModuleNameMap: { [k in keyof Partial<DataI>]: string } = {
     'performanceLevel': 'Performance Level',
 };
 
+const ModuleUnitMap: { [k in keyof Partial<DataI>]: string | string[] } = {
+    'frameTime': 'ms',
+    'cpuTime': 'ms',
+    'gpuTime': 'ms',
+    'performanceLevel': ['POWER_SAVE', 'LOW_PERFORMANCE', 'MEDIUM_PERFORMANCE', 'HIGH_PERFORMANCE', 'BOOST'],
+    'thermalTrends': ['FAST_DECREASE', 'DECREASE', 'STABLE', 'INCREASE', 'FAST_INCREASE'],
+};
+
 function processEachModule(fn: (name: key_type, title: string) => void) {
     Object.keys(ModuleNameMap).forEach(x => {
         fn(x as key_type, (ModuleNameMap as any)[x]);
@@ -112,7 +120,8 @@ function framePlotData($: any) {
     }
     plotter.drawPauseState();
     const scalers = plotter.sample('scalers');
-    updateScalers($, scalers || [], hasCursor);
+    frameUpdateScalers($, scalers || [], hasCursor);
+    frameUpdateStatist($);
 
     plotter.dirty = false;
 }
@@ -209,7 +218,7 @@ function setupThermometer($: any) {
 }
 
 
-function updateScalers($: any, scalers: ScalerI[], selected: boolean) {
+function frameUpdateScalers($: any, scalers: ScalerI[], selected: boolean) {
     const scalersDiv = <HTMLDivElement>$.app.querySelector('.ad-perf-scaler-list');
     scalersDiv.innerHTML = "";
     const els: string[] = [];
@@ -229,6 +238,23 @@ function updateScalers($: any, scalers: ScalerI[], selected: boolean) {
         `);
     }
     scalersDiv.innerHTML = els.join('\n');
+}
+
+
+function frameUpdateStatist($: any) {
+    const block = <HTMLDivElement>$.app.querySelector('.ad-perf-latest-data-block');
+    const d = plotter?.data;
+    if (!d) return;
+    const sections: string[] = [];
+    const processItem = (key: key_type, title: string) => {
+        const s = d.mapAll(x => x[key] as number).reduce((p, c) => p + c, 0);
+        const avg = s / d.length;
+        let unit = ModuleUnitMap[key];
+        unit = unit === undefined ? `${formatValue(avg)}` : (unit instanceof Array ? unit[Math.round(avg)] : `${formatValue(avg)} ${unit}`);
+        sections.push(`${title}: ${unit} <br/>`)
+    };
+    processEachModule(processItem);
+    block.innerHTML = sections.join('\n');
 }
 
 
