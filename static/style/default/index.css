@@ -1,0 +1,203 @@
+
+.ad-perf-bar {
+    width: 100%;
+    display: flex;
+    height: 230px;
+}
+
+.ad-perf-module-titles {
+    min-width: 150px;
+    max-width: 200px;
+    flex: 1;
+    height: 100%;
+}
+.ad-perf-title {
+    width: 100%;
+    background: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.1)); 
+    padding: 1px;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+}
+.ad-perf-data-modules-list {
+    background: rgba(255, 255, 255, 0.05); 
+    min-height: 200px;
+    margin-top: 2px;
+    width: 100%;
+    padding: 1px;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+.ad-perf-data-tools {
+    min-width: 400px;
+    padding: none;
+    margin:none;
+    flex: 2;
+}
+
+.ad-perf-data-tools {
+    /* width: 100%; */
+    /* background: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.1));  */
+    /* padding: 1px; */
+    /* border: 1px solid rgba(0, 0, 0, 0.3); */
+    margin-left: 5px;
+}
+
+.ad-perf-btn-clear {
+    /* padding: 0px; */
+    /* margin: 0px; */
+    padding-left: 5px;
+    padding-right: 5px;
+    display: inline;
+    border-right: 1px solid rgba(0, 0, 0, 0.2);
+    border-left: 1px solid rgba(0, 0, 0, 0.2);
+    
+}
+.ad-perf-btn-clear:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.ad-perf-select {
+    display: inline-block;
+    margin-left: 3px;
+    margin-right: 3px;
+    border-right: 1px solid rgba(0, 0, 0, 0.2);
+    border-left: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.ad-perf-data-modules-list ul li:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.ad-perf-module-color {
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    margin-left: 3px;
+    margin-right: 3px;
+}
+
+.cpu_frametime {
+    background-color: hsl(0, 100%, 67%);
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    margin-left: 3px;
+    margin-right: 3px;
+}
+.gpu_frametime {
+    background-color: hsl(91, 48%, 56%);
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    margin-left: 3px;
+    margin-right: 3px;
+}
+
+.ad-perf-data-paint canvas {
+    margin-top: 3px;
+    border: 1px solid black;
+    width: 100%;
+    height: 200px; 
+}
+
+.ad-perf-details {
+    width: 100%;
+    display: inline-block;
+}
+
+.ad-perf-block-title {
+    text-align: center;    
+    background: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.1)); 
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+
+.ad-perf-details-contents {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    height: 130px;
+    min-width: 200px;
+    padding-top: 10px;
+}
+
+.ad-perf-bottleneck {
+    flex:1;
+    width: 50%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.ad-perf-bottleneck-value {
+    width: 120px;
+    height: 30px;
+    background-color: red;
+    color: white;
+    display: inline-block;
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 5px;
+}
+
+.ad-perf-thermal {
+    flex:1;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+
+.ad-perf-indicator {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+/* .ad-perf-thermal canvas{ */
+    /* border: 1px solid black; */
+/* } */
+
+.ad-perf-scaler-list {
+    display: flex;
+    flex-direction: row;
+    padding-left: 20px;
+}
+
+.ad-perf-scaler-item {
+    min-height: 200px;
+    width: 50px;
+    border: 1px white;
+    display: flex;
+    flex-direction: column;
+    margin: 5px;
+    text-align: center;
+}
+.ad-perf-scaler-bar {
+    width: 20px;
+    height: 100px;
+    background-color: rgba(255, 255, 255, 0.2);
+    display:inline-block;
+    position: relative;
+}
+.ad-perf-scaler-bar-content {
+    width: 100%;
+    height: 80px;
+    margin-top: 20px;
+    background-color: rgb(50, 146, 63);
+}
+.ad-perf-scaler-bar-level {
+    position: absolute;
+    top: 42px;
+    left: 3px;
+}
+
+.ad-perf-scaler-title {
+    transform: rotate(30deg);
+    transform-origin: left bottom;
+    text-align: right;
+}
+
+
+.ad-perf-latest-data-block {
+    padding: 5px;
+    min-height: 50px;
+}

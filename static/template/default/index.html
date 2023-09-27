@@ -1,0 +1,101 @@
+<div id="ad-perf-app">
+    <!--
+    <h1 id="app">
+    </h1>
+-->
+    <div class="ad-perf-bar">
+
+        <div class="ad-perf-module-titles">
+            <div class="ad-perf-title">
+                Profiler Modules
+            </div>
+            <div class="ad-perf-data-modules-list">
+                <ul>
+                    <li><span class=cpu_frametime></span>GPU frametim</li>
+                    <li><span class=gpu_frametime></span>GPU frametim</li>
+                    <li><span class=gpu_frametime></span>GPU frametim</li>
+                    <li><span class=gpu_frametime></span>GPU frametim</li>
+                </ul>
+            </div>
+        </div>
+        <div class="ad-perf-data-tools">
+            <div class="ad-perf-title">
+                <div class="ad-perf-select">Device <select name="" value="ddd">
+                        <option value="ddd">Redmi K40 Pro</option>
+                        <option value="ddd1">Oppo Revo 3X</option>
+                    </select></div>
+                <div class="ad-perf-btn-clear">Clear</div>
+            </div>
+            <div class="ad-perf-data-paint">
+                <canvas id="ad-perf-chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="ad-perf-details">
+        <div class="ad-perf-block-title"> Adaptive Performance Details </div>
+        <div class="ad-perf-details-contents">
+            <div class="ad-perf-bottleneck">
+                Bottleneck
+                <div>
+                    <div class="ad-perf-bottleneck-value">
+                        CPU
+                    </div>
+                </div>
+            </div>
+            <div class="ad-perf-thermal">
+                Thermal Warning
+                <div class="ad-perf-indicator">
+                    <canvas width="60px" height="60px" ></canvas>
+                </div>
+                <div class="ad-perf-thermal-value-text">
+                Throttling
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ad-perf-scalers">
+        <div class="ad-perf-block-title">Scalers</div>
+        <div class="ad-perf-scaler-list">
+            <div class="ad-perf-scaler-item">
+                <div>10</div>
+                <div>
+                    <div class="ad-perf-scaler-bar">
+                        <div class="ad-perf-scaler-bar-content"></div>
+                        <div class="ad-perf-scaler-bar-level">33</div>
+                    </div>
+                </div>
+                <div class="ad-perf-scaler-title">Resolution</div>
+            </div>
+            <div class="ad-perf-scaler-item">
+                <div>20</div>
+                <div>
+                    <div class="ad-perf-scaler-bar">
+                        <div class="ad-perf-scaler-bar-content"></div>
+                        <div class="ad-perf-scaler-bar-level">33</div>
+                    </div>
+                </div>
+                <div class="ad-perf-scaler-title">Physics</div>
+            </div>
+            <div class="ad-perf-scaler-item">
+                <div>2</div>
+                <div>
+                    <div class="ad-perf-scaler-bar">
+                        <div class="ad-perf-scaler-bar-content" style="height: 10px; margin-top: 90px;"></div>
+                        <div class="ad-perf-scaler-bar-level">33</div>
+                    </div>
+                </div>
+                <div class="ad-perf-scaler-title">MSAA</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ad-perf-last-data">
+        <div class="ad-perf-block-title">CPU and GPU Performance</div>
+        CPU frametime/ GPU frametime/ AVG CPU Frametime ...
+        <div class="ad-perf-latest-data-block">
+
+        </div>
+
+    </div>
+</div>
