@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs-extra';
 import { join } from 'path';
-import { setup_server, tear_down_server , setup_html} from './inspector';
+import { setupUDPServer, tearDown , setupHTMLContent} from './inspector';
 /**
  * @zh 如果希望兼容 3.3 之前的版本可以使用下方的代码
  * @en You can add the code below if you want compatibility with versions prior to 3.3
@@ -25,11 +25,11 @@ module.exports = Editor.Panel.define({
         },
     },
     async ready() {
-        await setup_server(this.$);
-        setup_html(this.$);
+        await setupUDPServer(this.$);
+        setupHTMLContent(this.$);
     },
     beforeClose() { 
-        tear_down_server();
+        tearDown();
     },
     close() { },
 });
