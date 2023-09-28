@@ -65,14 +65,14 @@ const ModuleNameMap: { [k in keyof Partial<DataI>]: string } = {
     'gpuTime': 'GPU Time',
     'thermalValue': 'Thermal Value',
     'thermalTrends': 'Thermal Trends',
-    'performanceLevel': 'Performance Level',
+    'thermalLevel': 'Thermal Level',
 };
 
 const ModuleUnitMap: { [k in keyof Partial<DataI>]: string | string[] } = {
     'frameTime': 'ms',
     'cpuTime': 'ms',
     'gpuTime': 'ms',
-    'performanceLevel': ['POWER_SAVE', 'LOW_PERFORMANCE', 'MEDIUM_PERFORMANCE', 'HIGH_PERFORMANCE', 'BOOST'],
+    'thermalLevel': ['L0', 'L1', 'L2', 'L3'],
     'thermalTrends': ['FAST_DECREASE', 'DECREASE', 'STABLE', 'INCREASE', 'FAST_INCREASE'],
 };
 
@@ -101,12 +101,15 @@ function frameHandleData(data: DataI, $: any) {
 function framePlotData($: any) {
     if (!plotter || !plotter.dirty) return;
     plotter.clear();
-    plotter.drawWithFilter(ModuleColorMap.cpuTime, 'cpuTime', 0, 20, (d) => d.cpuTime, false, true);
-    plotter.drawWithFilter(ModuleColorMap.gpuTime, 'gpuTime', 0, 20, (d) => d.gpuTime);
-    plotter.drawWithFilter(ModuleColorMap.thermalValue, 'thermalValue', 10, -10, (d) => d.thermalValue, true, true);
-    plotter.drawWithFilter(ModuleColorMap.thermalTrends, 'thermalTrends', 0, 4, (d) => d.thermalTrends);
-    plotter.drawWithFilter(ModuleColorMap.performanceLevel, 'performanceLevel', 0, 4, (d) => d.performanceLevel);
-    plotter.drawWithFilter(ModuleColorMap.frameTime, 'frameTime', 0, 20, (d) => d.frameTime, false, true);
+    const plotLine = (field: key_type, bottomRange: number, topRange: number, expandBottom: boolean = false, expandTop: boolean = false): void => {
+        plotter?.drawWithFilter(ModuleColorMap[field], field, ModuleNameMap[field] || field, bottomRange, topRange, (d) => <number>d[field], expandBottom, expandTop);
+    }
+    plotLine('cpuTime', 0, 20, false, true);
+    plotLine('gpuTime', 0, 20,);
+    plotLine('thermalValue', 10, -10, true, true);
+    plotLine('thermalTrends', 0, 4,);
+    plotLine('thermalLevel', 0, 4,);
+    plotLine('frameTime', 0, 20, false, true);
     const hasCursor = plotter.drawCursorLine();
     if (hasCursor) {
         let x = plotter.cursorLine + 8;
@@ -193,7 +196,7 @@ function lazySetupModuleList(unorderedList: HTMLUListElement) {
     ModuleColorMap.cpuTime = assignColor();
     ModuleColorMap.gpuTime = assignColor();
     ModuleColorMap.frameTime = assignColor();
-    ModuleColorMap.performanceLevel = assignColor();
+    ModuleColorMap.thermalLevel = assignColor();
     ModuleColorMap.thermalValue = assignColor();
     ModuleColorMap.thermalTrends = assignColor();
     const appendItem = (key: key_type, title: string) => {

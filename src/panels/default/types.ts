@@ -10,7 +10,7 @@ export interface ScalerI {
 export interface DataI {
     enabled: boolean;
     thermalValue: number;
-    performanceLevel: number;
+    thermalLevel: number;
     thermalTrends: number;
     frameTime: number;
     frameTimeEMA: number;

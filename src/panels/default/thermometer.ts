@@ -1,19 +1,9 @@
 import { formatValue } from "./utils";
 
-export class Thermometer {
-    canvas: HTMLCanvasElement;
-    textDiv: HTMLDivElement;
-    constructor(canvas: HTMLCanvasElement, textDiv: HTMLDivElement) {
-        this.canvas = canvas;
-        this.textDiv = textDiv;
-    }
+const Uniform_ThermalValue = 'thermalValue';
+const Uniform_PixelWidth = `pixelWidth`;
 
-    setup() {
-        const canvas = this.canvas;
-        const gl = canvas.getContext('webgl')!;
-        const program = gl.createProgram()!;
-        const vshader = gl.createShader(gl.VERTEX_SHADER)!;
-        gl.shaderSource(vshader, `
+const VertexShader = `
     attribute vec4 position;
     attribute vec2 uv;
     varying vec2 v_uv;
@@ -21,14 +11,16 @@ export class Thermometer {
         gl_Position = position;
         v_uv = uv;
     }
-    `);
-        gl.compileShader(vshader);
-        const fshader = gl.createShader(gl.FRAGMENT_SHADER)!;
-        gl.shaderSource(fshader, `
+`;
+
+const FragmentShader = `
     precision mediump float;
     varying vec2 v_uv;
-    uniform float thermalValue;
-    uniform float pixelWidth;
+
+    uniform float ${Uniform_ThermalValue};
+    uniform float ${Uniform_PixelWidth};
+
+    const float PI = 3.1415926535897;
 
     float hue2rgb(float p, float q, float t) {
         if (t < 0.0) t += 1.0;
@@ -59,10 +51,6 @@ export class Thermometer {
     
         return vec4(rgb, 1.0);
     }
-    
-
-
-    const float PI = 3.1415926535897;
 
     vec4 mapcolor(float v) {
         if(v < 0.4) return hsl2rgb(vec3(0.333, 1.0, 0.5));
@@ -78,12 +66,12 @@ export class Thermometer {
         if(v_uv[1] < 0.2) {
             gl_FragColor = vec4(0, 0, 0, 0);
             if(v_uv[0] > 0.3 && v_uv[0] < 0.7 &&  v_uv[1] > 0.10 && v_uv[1] < 0.14) {
-                gl_FragColor = mapcolor(thermalValue);
+                gl_FragColor = mapcolor(${Uniform_ThermalValue});
             } else {
                 gl_FragColor = vec4(0, 0, 0, 0);
             }
         } else {
-            vec2  cc = clamp((vec2(dist) - vec2(0.4, 0.2))/pixelWidth, 0.0, 1.0);
+            vec2  cc = clamp((vec2(dist) - vec2(0.4, 0.2))/${Uniform_PixelWidth}, 0.0, 1.0);
             float alpha = min(1.0 - cc[0], cc[1]);
             if(angle < thermalValue) {
                 gl_FragColor = vec4(mapcolor(angle).rgb, alpha);
@@ -92,7 +80,25 @@ export class Thermometer {
             }
         }
     }
-    `);
+`;
+
+export class Thermometer {
+    canvas: HTMLCanvasElement;
+    textDiv: HTMLDivElement;
+    constructor(canvas: HTMLCanvasElement, textDiv: HTMLDivElement) {
+        this.canvas = canvas;
+        this.textDiv = textDiv;
+    }
+
+    setup() {
+        const canvas = this.canvas;
+        const gl = canvas.getContext('webgl')!;
+        const program = gl.createProgram()!;
+        const vshader = gl.createShader(gl.VERTEX_SHADER)!;
+        gl.shaderSource(vshader, VertexShader);
+        gl.compileShader(vshader);
+        const fshader = gl.createShader(gl.FRAGMENT_SHADER)!;
+        gl.shaderSource(fshader, FragmentShader);
         gl.compileShader(fshader);
         gl.attachShader(program, vshader);
         gl.attachShader(program, fshader);
@@ -100,19 +106,19 @@ export class Thermometer {
         gl.useProgram(program);
 
 
-        const ufValueLocation = gl.getUniformLocation(program, 'thermalValue')!;
-        const ufWidthLocation = gl.getUniformLocation(program, 'pixelWidth')!;
+        const ufValueLocation = gl.getUniformLocation(program, Uniform_ThermalValue)!;
+        const ufWidthLocation = gl.getUniformLocation(program, Uniform_PixelWidth)!;
 
-        const liquidVertices = new Float32Array([
+        const vertices = new Float32Array([
             -1, -1, 0, 0,
             -1, 1, 0, 1,
             1, -1, 1, 0,
-            1, 1, 1, 1, // Adjust the Y coordinate to set the liquid level
+            1, 1, 1, 1, 
         ]);
 
         let vertexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, liquidVertices, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
         const position = gl.getAttribLocation(program, 'position');
         gl.enableVertexAttribArray(position);
@@ -120,19 +126,19 @@ export class Thermometer {
         const uv = gl.getAttribLocation(program, 'uv');
         gl.enableVertexAttribArray(uv);
         gl.vertexAttribPointer(uv, 2, gl.FLOAT, false, 16, 8);
-        // gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
 
         gl.clearColor(0, 0, 0, 0);
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-
+        let previouseValue = -1;
         return (value: number): void => {
-            if (gl) {
+            if (gl && value != previouseValue) {
                 gl.uniform1f(ufValueLocation, Math.min(1.4, value));
                 gl.uniform1f(ufWidthLocation, 1.0 / canvas.width);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
                 gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                previouseValue = value;
             }
             if (this.textDiv) {
                 this.textDiv.innerHTML = '' + formatValue(value);

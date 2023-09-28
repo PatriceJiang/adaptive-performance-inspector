@@ -10,7 +10,7 @@ export class DataPlot {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     data: CircleArray<DataI> = new CircleArray(1600);
-    private _activeLabel?: string;
+    private _activeField?: string;
     private _pause = false;
     cursorLine: number = -1;
     dirty: boolean = true;
@@ -36,18 +36,18 @@ export class DataPlot {
     reset() {
         this.dirty = true;
         this.data.reset();
-        this._activeLabel = undefined;
+        this._activeField = undefined;
         this._pause = false;
         this.cursorLine = -1;
     }
 
-    active(title: string) {
-        this._activeLabel = title;
+    active(field: string) {
+        this._activeField = field;
         this.dirty = true;
     }
 
-    deactive(title: string) {
-        this._activeLabel = undefined;
+    deactive(field: string) {
+        this._activeField = undefined;
         this.dirty = true;
     }
 
@@ -62,7 +62,7 @@ export class DataPlot {
     get W() { return this.right - this.left; }
     get dotCount() { return Math.min(Math.floor(this.W / xSeg), this.data.length); }
 
-    drawWithFilter(color: string, label: string, bottomRange: number, topRange: number, mapper: (d: DataI) => number, expandBottom = false, expandTop = false) {
+    drawWithFilter(color: string, field: string, title:string, bottomRange: number, topRange: number, mapper: (d: DataI) => number, expandBottom = false, expandTop = false) {
         const c = this.ctx;
         const list = this.data.mapTail(this.dotCount, mapper);
         if (list.length < 2) return;
@@ -83,8 +83,8 @@ export class DataPlot {
 
 
         c.save();
-        const isActive = this._activeLabel && this._activeLabel === label;
-        if (!this._activeLabel) {
+        const isActive = this._activeField && this._activeField === field;
+        if (!this._activeField) {
             c.strokeStyle = color;
             c.lineWidth = 1;
         } else {
@@ -132,7 +132,7 @@ export class DataPlot {
             if (displayRange) {
                 this.drawLabel(x / 2, labelBottom, `${minStr}`, color);
             }
-            this.drawLabel(60, 34, label, color);
+            this.drawLabel(60, 34, title || field, color);
         }
         c.restore();
 
