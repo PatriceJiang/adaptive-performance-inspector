@@ -1,9 +1,9 @@
 
 import { ScalerI, DataI, key_type } from "./types";
-import { DataPlot, PlotterManager } from './plotter';
+import { PlotterManager } from './plotter';
 import { formatValue, getUDPServer, knockKnock, timeAgo } from "./utils";
 import { Thermometer } from "./thermometer";
-import { showInputLayerFor } from "./input_layer";
+import { flushWaitingConnections, showInputLayerFor } from "./input_layer";
 import { Instructions, AddressStorage } from "./client_storage";
 
 const $clearupTasks: { (): void }[] = [];
@@ -35,6 +35,7 @@ export async function setupUDPServer($: any) {
                     addrStorage.updateAddress(searchResult);
                 }
                 console.log(`resgister target ${srcaddr}:${srcport}`);
+                flushWaitingConnections(srcaddr);
             } else {
                 plotters?.load(srcaddr);
                 const data = JSON.parse(msg);

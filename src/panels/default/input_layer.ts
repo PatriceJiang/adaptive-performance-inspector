@@ -1,5 +1,15 @@
 import { knockKnock } from "./utils";
 
+const waitingLists: { (addr: string): boolean }[] = [];
+export function flushWaitingConnections(addr: string) {
+    for (let i = waitingLists.length - 1; i >= 0; i--) {
+        const s = waitingLists[i];
+        if (s(addr)) {
+            waitingLists.splice(i, 1);
+        }
+    }
+}
+
 export function showInputLayerFor(target: HTMLDivElement) {
 
     const oldMask = target.querySelector('.input-layer');
@@ -59,15 +69,34 @@ export function showInputLayerFor(target: HTMLDivElement) {
     inputBox.value = localStorage.getItem(LocalStorageIPKEY) || '';
 
     const connectBtn = <HTMLInputElement>box.querySelector('button');
-    connectBtn.addEventListener('click', () => {
+    connectBtn.addEventListener('click', async () => {
         if (doValidate()) {
             knockKnock(inputBox.value);
-            doHide();
+            connectBtn.disabled = true;
+            const ok = await waitClient(inputBox.value, 5000);
+            connectBtn.disabled = false;
+            if (ok) doHide();
         }
     });
 
 
     mask.appendChild(box);
-
     doDisplay();
+}
+
+function waitClient(addr: string, timeoutMS: number): Promise<boolean> {
+    return new Promise<boolean>((resolve, reject) => {
+        const exp = setTimeout(() => {
+            waitingLists.length = 0;
+            resolve(false);
+        }, timeoutMS);
+        waitingLists.push((testAddr: string) => {
+            if (testAddr == addr) {
+                clearTimeout(exp);
+                resolve(true);
+                return true;
+            }
+            return false;
+        });
+    })
 }
