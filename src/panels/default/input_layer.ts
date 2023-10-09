@@ -1,11 +1,11 @@
 import { knockKnock } from "./utils";
 
-const waitingLists: { (addr: string): boolean }[] = [];
-export function flushWaitingConnections(addr: string) {
-    for (let i = waitingLists.length - 1; i >= 0; i--) {
-        const s = waitingLists[i];
+const knockCallbacks: { (addr: string): boolean }[] = [];
+export function flushKnockCallbacks(addr: string) {
+    for (let i = knockCallbacks.length - 1; i >= 0; i--) {
+        const s = knockCallbacks[i];
         if (s(addr)) {
-            waitingLists.splice(i, 1);
+            knockCallbacks.splice(i, 1);
         }
     }
 }
@@ -73,7 +73,7 @@ export function showInputLayerFor(target: HTMLDivElement) {
         if (doValidate()) {
             knockKnock(inputBox.value);
             connectBtn.disabled = true;
-            const ok = await waitClient(inputBox.value, 5000);
+            const ok = await waitingForKnockResult(inputBox.value, 5000);
             connectBtn.disabled = false;
             if (ok) doHide();
         }
@@ -84,13 +84,13 @@ export function showInputLayerFor(target: HTMLDivElement) {
     doDisplay();
 }
 
-function waitClient(addr: string, timeoutMS: number): Promise<boolean> {
+export function waitingForKnockResult(addr: string, timeoutMS: number): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
         const exp = setTimeout(() => {
-            waitingLists.length = 0;
+            knockCallbacks.length = 0;
             resolve(false);
         }, timeoutMS);
-        waitingLists.push((testAddr: string) => {
+        knockCallbacks.push((testAddr: string) => {
             if (testAddr == addr) {
                 clearTimeout(exp);
                 resolve(true);

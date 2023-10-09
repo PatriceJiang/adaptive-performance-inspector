@@ -3,7 +3,7 @@ import { ScalerI, DataI, key_type } from "./types";
 import { PlotterManager } from './plotter';
 import { formatValue, getUDPServer, knockKnock, timeAgo } from "./utils";
 import { Thermometer } from "./thermometer";
-import { flushWaitingConnections, showInputLayerFor } from "./input_layer";
+import { flushKnockCallbacks, showInputLayerFor, waitingForKnockResult } from "./input_layer";
 import { Instructions, AddressStorage } from "./client_storage";
 
 const $clearupTasks: { (): void }[] = [];
@@ -35,7 +35,7 @@ export async function setupUDPServer($: any) {
                     addrStorage.updateAddress(searchResult);
                 }
                 console.log(`resgister target ${srcaddr}:${srcport}`);
-                flushWaitingConnections(srcaddr);
+                flushKnockCallbacks(srcaddr);
             } else {
                 plotters?.load(srcaddr);
                 const data = JSON.parse(msg);
@@ -48,9 +48,9 @@ export async function setupUDPServer($: any) {
 
 
     const searchClients = setInterval(() => {
-        addrStorage.addresses.forEach(item => {
-            knockKnock(item.addr);
-        })
+        // addrStorage.addresses.forEach(item => {
+            // knockKnock(item.addr);
+        // })
         renderAddressList($);
     }, 3000);
 
@@ -300,6 +300,16 @@ function setupDeviceEditor($: any) {
     const btnEdit = <HTMLDivElement>$.app.querySelector('.ad-perf-btn-edit');
     btnEdit.addEventListener('click', () => {
         showInputLayerFor($.app);
+    });
+    const btnConnect = <HTMLDivElement>$.app.querySelector('.ad-perf-btn-knock');
+    btnConnect.addEventListener('click', async () => {
+        const selectEle = <HTMLSelectElement>$.app.querySelector('.ad-perf-select select');
+        const addr = selectEle.value;
+        if(addr) {
+            knockKnock(addr);
+            await waitingForKnockResult(addr, 3000);
+            plotters?.dft(addr);
+        }
     })
 }
 
