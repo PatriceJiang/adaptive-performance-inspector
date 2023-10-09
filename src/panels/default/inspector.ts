@@ -1,58 +1,103 @@
-const dgram = require('dgram');
 
 import { ScalerI, DataI, key_type } from "./types";
-import { DataPlot } from './plotter';
-import { find_port, server_bind, formatValue, getBroadcastAddress } from "./utils";
+import { DataPlot, PlotterManager } from './plotter';
+import { formatValue, getUDPServer, knockKnock, timeAgo } from "./utils";
 import { Thermometer } from "./thermometer";
+import { showInputLayerFor } from "./input_layer";
+import { Instructions, AddressStorage } from "./client_storage";
 
 const $clearupTasks: { (): void }[] = [];
 const $persistFrameTask: { (): void }[] = [];
 
-let plotter: DataPlot | null = null;
+// let plotter: DataPlot | null = null;
+
+const addrStorage = new AddressStorage;
+
+
+let plotters: PlotterManager | undefined;
 
 
 export async function setupUDPServer($: any) {
-    const port = await find_port(4000, 5000);
-    const server = dgram.createSocket('udp4');
-    server.on('error', (error: Error) => {
-        console.error('Udp Server Error');
-        console.error(error);
-    });
+
+    const server = await getUDPServer();
+
     server.on('message', (msg: any, rinfo: any) => {
         const srcaddr = rinfo.address;
         const srcport = rinfo.port;
         try {
-            const data = JSON.parse(msg);
-            // console.log(`mesages: ${data}, from ${srcaddr}:${srcport}`);
-            frameHandleData(data, $);
+
+            if (msg instanceof Uint8Array && (new TextDecoder).decode(msg).startsWith(Instructions.Register)) {
+                const searchResult = addrStorage.findAddr(srcaddr);
+                if (!searchResult) {
+                    addrStorage.addAddress(srcaddr, srcaddr, `src_port : ${srcport}`);
+                } else {
+                    searchResult.info = `src_port: ${srcport}`;
+                    addrStorage.updateAddress(searchResult);
+                }
+                console.log(`resgister target ${srcaddr}:${srcport}`);
+            } else {
+                plotters?.load(srcaddr);
+                const data = JSON.parse(msg);
+                frameHandleData(srcaddr, data, $);
+            }
         } catch (e) {
             console.error(e);
         }
     });
 
-    await server_bind(server, port);
-    server.setBroadcast(true);
 
-    const encoder = new TextEncoder();
-    const broadcastMsg = encoder.encode('cocos-adaptive-performance;sdfsdfsdfsf;');
-    const buffer = Buffer.from(broadcastMsg.buffer);
-    const broadcastTask = setInterval(() => {
-        const addresses = getBroadcastAddress();
-        for (let addr of addresses) {
-            server.send(buffer, 9933, addr, (err: any) => {
-                if (err) {
-                    console.error(`broadcast error ${err}`);
-                }
-            });
-        }
-    }, 2000);
+    const searchClients = setInterval(() => {
+        addrStorage.addresses.forEach(item => {
+            knockKnock(item.addr);
+        })
+        renderAddressList($);
+    }, 3000);
+
+    renderAddressList($);
 
     $persistFrameTask.push(() => framePlotData($));
     $clearupTasks.push(() => {
-        clearInterval(broadcastTask);
         server.close();
+        clearInterval(searchClients);
     });
 }
+
+
+
+function renderAddressList($: any) {
+    const selectEle = <HTMLSelectElement>$.app.querySelector('.ad-perf-select select');
+    const list = addrStorage.addresses;
+    const options: HTMLOptionElement[] = [];
+    const nowTime = (new Date).getTime();
+    for (const addr of list) {
+        const opt = document.createElement('option');
+        const indicator = document.createElement('span');
+        indicator.classList.add('ad-perf-client-indicator');
+        const ipaddr = document.createElement('span');
+        ipaddr.innerHTML = `${addr.addr} ${timeAgo(addr.atime)} ago`;
+
+        const pastTimeMS = (nowTime - addr.atime.getTime()) / 1000;
+        opt.value = addr.addr;
+        if (pastTimeMS < 5) {
+            indicator.innerHTML = "🟢";
+        } else if (pastTimeMS < 60) {
+            indicator.innerHTML = "🟠";
+        } else if (pastTimeMS < 3600) {
+            indicator.innerHTML = '🔴';
+        } else {
+            indicator.innerHTML = '';
+        }
+
+        opt.appendChild(indicator);
+        opt.appendChild(ipaddr);
+        options.push(opt);
+    }
+    const oldValue = selectEle.value;
+    selectEle.innerHTML = '';
+    options.forEach(e => selectEle.appendChild(e));
+    selectEle.value = oldValue || (options.length == 0 ? '' : options[0].value);
+}
+
 
 
 
@@ -78,18 +123,25 @@ const ModuleUnitMap: { [k in keyof Partial<DataI>]: string | string[] } = {
 
 function processEachModule(fn: (name: key_type, title: string) => void) {
     Object.keys(ModuleNameMap).forEach(x => {
-        fn(x as key_type, (ModuleNameMap as any)[x]);
+        try {
+            fn(x as key_type, (ModuleNameMap as any)[x]);
+        } catch (e) {
+            console.error(`failed to process field: ${x}`);
+            console.error(e);
+        }
     });
 }
 
-function frameHandleData(data: DataI, $: any) {
+function frameHandleData(addr: string, data: DataI, $: any) {
+    const plotter = plotters?.dft();
     if (!plotter) return;
     if (!moduleListHTML) {
         moduleListHTML = <HTMLUListElement>$.app.querySelector('.ad-perf-data-modules-list ul');
         lazySetupModuleList(moduleListHTML);
     }
+
+    plotters?.dispatchData(addr, data);
     if (!plotter.pause) {
-        plotter.push(data);
         const bottleneck = <HTMLDivElement>$.app.querySelector('.ad-perf-bottleneck-value');
         const list = ['None', 'CPU', 'GPU', 'CPU & GPU'];
         bottleneck.innerHTML = list[data.bottleneck] || 'unknown';
@@ -99,6 +151,7 @@ function frameHandleData(data: DataI, $: any) {
 }
 
 function framePlotData($: any) {
+    const plotter = plotters?.dft();
     if (!plotter || !plotter.dirty) return;
     plotter.clear();
     const plotLine = (field: key_type, bottomRange: number, topRange: number, expandBottom: boolean = false, expandTop: boolean = false): void => {
@@ -130,7 +183,8 @@ function framePlotData($: any) {
 }
 
 export function setupHTMLContent($: any) {
-    plotter = new DataPlot('#ad-perf-chart', $);
+
+    plotters = new PlotterManager($.app.querySelector("#ad-perf-chart"));
 
     const canvasContainer = <HTMLDivElement>$.app.querySelector(".ad-perf-data-paint");
     const canvas = <HTMLCanvasElement>canvasContainer.querySelector('canvas');
@@ -143,36 +197,51 @@ export function setupHTMLContent($: any) {
     window.addEventListener('resize', resizelistener);
     $clearupTasks.push(() => {
         window.removeEventListener('resize', resizelistener);
-        if (plotter) plotter.dirty = true;
+        plotters?.clear();
     });
 
     canvas.onclick = () => {
-        if (plotter) {
-            plotter.pause = !plotter.pause;
-            plotter.dirty = true;
-        }
+        plotters?.process((p) => {
+            p.pause = !p.pause;
+            p.dirty = true;
+        });
     };
 
     canvas.onmousemove = (ev: any) => {
-        if (plotter) {
+        plotters?.process((plotter) => {
             const rect = ev.target!.getBoundingClientRect();
             const x = ev.clientX - rect.left;
             plotter.cursorLine = x;
             plotter.dirty = true;
-        }
+        });
     };
 
     canvas.onmouseleave = (ev) => {
-        if (plotter) {
+        plotters?.process((plotter) => {
             plotter.cursorLine = -1;
             plotter.dirty = true;
-        }
+        });
     };
 
     const clearBtn = <HTMLDivElement>$.app.querySelector(".ad-perf-btn-clear");
-    clearBtn.onclick = () => { plotter?.reset(); }
+    clearBtn.onclick = () => { plotters?.process((p) => p.reset()) };
 
     setupThermometer($);
+
+    setupDeviceEditor($);
+
+
+    setupAddressList($);
+
+}
+
+function setupAddressList($: any) {
+    renderAddressList($);
+    const selectEle = <HTMLSelectElement>$.app.querySelector('.ad-perf-select select');
+    selectEle.onchange = (ev: Event) => {
+        plotters?.dft(selectEle.value);
+    };
+
 }
 
 function lazySetupModuleList(unorderedList: HTMLUListElement) {
@@ -186,8 +255,8 @@ function lazySetupModuleList(unorderedList: HTMLUListElement) {
         const tt = document.createTextNode(title);
         li.appendChild(tt);
 
-        li.addEventListener('mouseenter', () => plotter?.active(key));
-        li.addEventListener('mouseleave', () => plotter?.deactive(key));
+        li.addEventListener('mouseenter', () => plotters?.process(p => p.active(key)));
+        li.addEventListener('mouseleave', () => plotters?.process(p => p.deactive(key)));
         return li;
     };
 
@@ -211,13 +280,20 @@ function setupThermometer($: any) {
     const thermometer = new Thermometer(canvas, textDiv);
     const frameFn = thermometer.setup();
     $persistFrameTask.push(() => {
-        if (plotter) {
-            const d = plotter.data.last();
+        plotters?.process((p) => {
+            const d = p.data.last();
             if (d) {
                 frameFn(d.thermalValue);
             }
-        }
+        });
     });
+}
+
+function setupDeviceEditor($: any) {
+    const btnEdit = <HTMLDivElement>$.app.querySelector('.ad-perf-btn-edit');
+    btnEdit.addEventListener('click', () => {
+        showInputLayerFor($.app);
+    })
 }
 
 
@@ -246,7 +322,7 @@ function frameUpdateScalers($: any, scalers: ScalerI[], selected: boolean) {
 
 function frameUpdateStatist($: any) {
     const block = <HTMLDivElement>$.app.querySelector('.ad-perf-latest-data-block');
-    const d = plotter?.data;
+    const d = plotters?.dft()?.data;
     if (!d) return;
     const sections: string[] = [];
     const processItem = (key: key_type, title: string) => {

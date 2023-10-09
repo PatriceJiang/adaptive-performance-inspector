@@ -14,16 +14,22 @@ export class DataPlot {
     private _pause = false;
     cursorLine: number = -1;
     dirty: boolean = true;
-    constructor(selector: string, $: any) {
-        this.canvas = <HTMLCanvasElement>$.app.querySelector(selector);
-        this.ctx = this.canvas.getContext('2d')!;
+    address: string;
+    constructor(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, address: string) {
+        this.canvas = canvas;
+        this.ctx = context
+        this.address = address;
     }
     get width() { return this.canvas.width; }
     get height() { return this.canvas.height; }
 
-    push(ele: DataI) {
+    push(ele: DataI): boolean {
+        if(this.pause) {
+            return false;
+        }
         this.data.push(ele);
         this.dirty = true;
+        return true;
     }
 
     clear() {
@@ -62,7 +68,7 @@ export class DataPlot {
     get W() { return this.right - this.left; }
     get dotCount() { return Math.min(Math.floor(this.W / xSeg), this.data.length); }
 
-    drawWithFilter(color: string, field: string, title:string, bottomRange: number, topRange: number, mapper: (d: DataI) => number, expandBottom = false, expandTop = false) {
+    drawWithFilter(color: string, field: string, title: string, bottomRange: number, topRange: number, mapper: (d: DataI) => number, expandBottom = false, expandTop = false) {
         const c = this.ctx;
         const list = this.data.mapTail(this.dotCount, mapper);
         if (list.length < 2) return;
@@ -200,3 +206,51 @@ export class DataPlot {
     }
 }
 
+
+export class PlotterManager {
+    private plotters: { [key: string]: DataPlot } = {};
+    private canvas: HTMLCanvasElement;
+    private context: CanvasRenderingContext2D;
+    private currentAddress: string | null = null;
+    constructor(canvas: HTMLCanvasElement) {
+        this.canvas = canvas;
+        this.context = canvas.getContext('2d')!;
+    }
+
+    load(addr: string) {
+        let p = this.plotters[addr];
+        if (!p) {
+            p = this.plotters[addr] = new DataPlot(this.canvas, this.context, addr);
+        }
+        if (!this.currentAddress) {
+            this.currentAddress = addr;
+        }
+        return p;
+    }
+
+    dft(addr?: string): DataPlot | null {
+        if (addr) {
+            this.currentAddress = addr;
+        }
+        if (!this.currentAddress) {
+            return null;
+        }
+        return this.load(this.currentAddress);
+    }
+
+    clear() {
+        this.plotters = {};
+        this.currentAddress = null;
+    }
+
+    process(fn:(p:DataPlot)=>void) {
+        const d = this.dft();
+        if(d) {
+            fn(d);
+        }
+    }
+
+    dispatchData(addr:string, data:DataI) {
+        this.load(addr)?.push(data);
+    }
+}
