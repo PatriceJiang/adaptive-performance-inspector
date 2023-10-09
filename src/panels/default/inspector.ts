@@ -76,13 +76,19 @@ function renderAddressList($: any) {
         const ipaddr = document.createElement('span');
         ipaddr.innerHTML = `${addr.addr} ${timeAgo(addr.atime)} ago`;
 
-        const pastTimeMS = (nowTime - addr.atime.getTime()) / 1000;
+        const lastUpdate = plotters?.load(addr.addr).lastUpdate?.getTime();
+        let pastTime = 0; 
+        if(lastUpdate !== undefined) {
+            pastTime = (nowTime - lastUpdate)/1000;
+        } else {
+            pastTime = (nowTime - addr.atime.getTime())/1000;
+        }
         opt.value = addr.addr;
-        if (pastTimeMS < 5) {
+        if (pastTime < 2) {
             indicator.innerHTML = "🟢";
-        } else if (pastTimeMS < 60) {
+        } else if (pastTime < 60) {
             indicator.innerHTML = "🟠";
-        } else if (pastTimeMS < 3600) {
+        } else if (pastTime < 3600) {
             indicator.innerHTML = '🔴';
         } else {
             indicator.innerHTML = '';

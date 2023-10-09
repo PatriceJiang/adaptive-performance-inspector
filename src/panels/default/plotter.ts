@@ -15,6 +15,7 @@ export class DataPlot {
     cursorLine: number = -1;
     dirty: boolean = true;
     address: string;
+    lastUpdate:Date|null = null;
     constructor(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, address: string) {
         this.canvas = canvas;
         this.ctx = context
@@ -24,6 +25,7 @@ export class DataPlot {
     get height() { return this.canvas.height; }
 
     push(ele: DataI): boolean {
+        this.lastUpdate = new Date;
         if(this.pause) {
             return false;
         }

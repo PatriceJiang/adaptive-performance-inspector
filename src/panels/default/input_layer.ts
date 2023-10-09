@@ -7,12 +7,20 @@ export function showInputLayerFor(target: HTMLDivElement) {
         target.removeChild(oldMask);
     }
 
+    const doDisplay = () => {
+        target.parentNode?.appendChild(mask);
+    };
+
+    const doHide = () => {
+        target.parentNode?.removeChild(mask);
+    };
+
     const bb = target.getBoundingClientRect();
     const mask = document.createElement('div');
     mask.className = 'ad-perf-input-background';
     mask.style.width = (bb.right - bb.left) + 'px';
     mask.style.height = (bb.bottom - bb.top) + 'px';
-    mask.addEventListener('click', () => { mask.parentNode?.removeChild(mask); return true; });
+    mask.addEventListener('click', () => { doHide(); return true; });
 
 
     const box = document.createElement('div');
@@ -54,11 +62,12 @@ export function showInputLayerFor(target: HTMLDivElement) {
     connectBtn.addEventListener('click', () => {
         if (doValidate()) {
             knockKnock(inputBox.value);
+            doHide();
         }
     });
 
 
     mask.appendChild(box);
 
-    target.parentNode?.appendChild(mask);
+    doDisplay();
 }

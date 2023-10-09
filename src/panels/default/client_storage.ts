@@ -72,6 +72,7 @@ export class AddressStorage {
 
     get addresses(): readonly AddressItem[] {
         const intern = this.loadAddressesIntl();
+        intern.sort((a, b) => b.atime - a.atime);
         return intern.map(intl2pub);
     }
 
@@ -89,11 +90,15 @@ export class AddressStorage {
     }
 
     addAddress(name: string, addr: string, info: string): AddressItem {
-        const intern = this.loadAddressesIntl();
+        let intern = this.loadAddressesIntl();
         const index = intern.reduce((p, c) => Math.max(p, c.index), 1) + 1;
         const nowTime = (new Date).getTime();
         const last = { index, atime: nowTime, ctime: nowTime, name: name, addr, info };
         intern.push(last);
+        if(intern.length > 20) {
+            intern.sort((a, b) => b.atime - a.atime);
+            intern = intern.slice(0, 20);
+        }
         this.storeAddressIntl(intern);
         return intl2pub(last);
     }
