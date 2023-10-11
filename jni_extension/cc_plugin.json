@@ -1,0 +1,12 @@
+{
+    "name":"adaptive-performance",
+    "version":"0.1.0",
+    "author":"cocosdemo",
+    "engine-version":">=3.8.0",
+    "modules":[
+        {
+            "target":"adaptive_performance_glue"
+        }
+    ],
+    "platforms":["android"]
+}
